@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "HeikinCKadai",
+            "request": "launch",
+            "mainClass": "HeikinCKadai",
+            "projectName": "java-basic-2_ff42c9b0"
+        },
+        {
+            "type": "java",
             "name": "XmasTree",
             "request": "launch",
             "mainClass": "XmasTree",
