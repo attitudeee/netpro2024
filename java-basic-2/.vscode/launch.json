@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "PrimeCheck",
+            "request": "launch",
+            "mainClass": "PrimeCheck",
+            "projectName": "java-basic-2_ff42c9b0"
+        },
+        {
+            "type": "java",
             "name": "MyExceptionHoliday",
             "request": "launch",
             "mainClass": "MyExceptionHoliday",
