@@ -5,9 +5,9 @@ public class XmasTreeKadai {
     }
 
     public static void printTree(int maxWidth, int trunkWidth, int trunkHeight, char leafChar) {
-        int N = maxWidth; // ツリーの最大の葉の半分の横幅の数
+        int N = maxWidth;
 
-        // ツリーの葉部分を描画
+        // ツリーの葉部分と雪を描画
         for (int j = 0; j <= N; j++) {
             for (int i = 0; i < N - j; i++) {
                 System.out.print(i % 2 == 0 ? " " : "!");
