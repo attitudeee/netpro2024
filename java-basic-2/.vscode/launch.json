@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "MyExceptionHoliday",
+            "request": "launch",
+            "mainClass": "MyExceptionHoliday",
+            "projectName": "java-basic-2_ff42c9b0"
+        },
+        {
+            "type": "java",
             "name": "HeikinCKadai",
             "request": "launch",
             "mainClass": "HeikinCKadai",
