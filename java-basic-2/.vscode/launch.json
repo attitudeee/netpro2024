@@ -6,6 +6,20 @@
     "configurations": [
         {
             "type": "java",
+            "name": "XmasTree",
+            "request": "launch",
+            "mainClass": "XmasTree",
+            "projectName": "java-basic-2_ff42c9b0"
+        },
+        {
+            "type": "java",
+            "name": "XmasTreeKadai",
+            "request": "launch",
+            "mainClass": "XmasTreeKadai",
+            "projectName": "java-basic-2_ff42c9b0"
+        },
+        {
+            "type": "java",
             "name": "Calc2Scanner",
             "request": "launch",
             "mainClass": "Calc2Scanner",
