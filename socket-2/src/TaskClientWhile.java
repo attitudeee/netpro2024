@@ -4,7 +4,7 @@ import java.net.BindException;
 import java.net.Socket; //ネットワーク関連のパッケージを利用する
 import java.util.Scanner;
 
-public class TaskClientOnce {
+public class TaskClientWhile {
 
     public static void main(String arg[]) {
         try {
@@ -16,27 +16,26 @@ public class TaskClientOnce {
             System.out.println("接続されました");
 
             ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-
-            System.out.println("数字を入力してください ↓");
-            int num = scanner.nextInt();
-
-            scanner.close();
-
-            TaskObject present = new TaskObject();
-            present.setExecNumber(num);
-
-            oos.writeObject(present);
-            oos.flush();
-
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+            while (true) {
+                System.out.println("数字を入力してください ↓");
+                int num = scanner.nextInt();
 
-            int result = ois.readInt();
-            System.out.println("サーバーからの最大素数は" + result);
+                TaskObject present = new TaskObject();
+                present.setExecNumber(num);
+                if (present.numJ() == false) {
+                    break;
+                }
+                oos.writeObject(present);
+                oos.flush();
 
+                int result = ois.readInt();
+                System.out.println("サーバーからの最大素数は" + result);
+            }
             ois.close();
             oos.close();
             socket.close();
-
+            scanner.close();
         } // エラーが発生したらエラーメッセージを表示してプログラムを終了する
         catch (BindException be) {
             be.printStackTrace();

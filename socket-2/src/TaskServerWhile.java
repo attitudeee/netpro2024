@@ -5,7 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class TaskServerOnce {
+public class TaskServerWhile {
 
     public static void main(String arg[]) {
         try {
@@ -23,12 +23,16 @@ public class TaskServerOnce {
 
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
             ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-            TaskObject response = (TaskObject) ois.readObject();
-            response.exec();
+            while (true) {
+                TaskObject response = (TaskObject) ois.readObject();
+                if (response.numJ() == false) {
+                    break;
+                }
+                response.exec();
 
-            oos.writeInt(response.getResult());
-            oos.flush();
-
+                oos.writeInt(response.getResult());
+                oos.flush();
+            }
             // close処理
 
             ois.close();
