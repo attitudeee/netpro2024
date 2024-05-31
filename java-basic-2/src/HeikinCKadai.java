@@ -19,7 +19,6 @@ public class HeikinCKadai {
 
     void initalizeScores() {
         Random r = new Random();
-
         for (int i = 0; i < N; i++) {
             int score = r.nextInt(101); // 0から100までのランダムな点数
             kamoku[i] = new Kamoku(i + 1, score); // 学生番号を1から100まで設定
@@ -39,10 +38,8 @@ public class HeikinCKadai {
         Kamoku[] passingStudents = Arrays.stream(kamoku)
                 .filter(k -> k.getScore() >= 80)
                 .toArray(Kamoku[]::new);
-
         // 合格者を点数の昇順で表示
         Arrays.sort(passingStudents, (a, b) -> a.getScore() - b.getScore());
-
         // 合格者を出力
         System.out.println("合格者一覧（80点以上）：");
         for (int i = 0; i < passingStudents.length; i++) {
