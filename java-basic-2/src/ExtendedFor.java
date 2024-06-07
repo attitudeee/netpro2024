@@ -1,4 +1,4 @@
-ublic class ExtendedFor {
+public class ExtendedFor {
 
     public static void main(String[] args){
 
