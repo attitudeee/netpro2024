@@ -5,136 +5,128 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Random;
 
-//配列で5つのボールを動かしてみよう
+// 配列で5つのボールを動かしてみよう
 
 public class MovingBallAWT {
-	public static void main(String[] args) {
-		FFrame f = new FFrame();
-		f.setSize(500, 500);
-		f.addWindowListener(new WindowAdapter() {
-			public void windowClosing(WindowEvent e) {
-				System.exit(0);
-			}
-		});
-		f.show();
-	}
+    public static void main(String[] args) {
+        FFrame f = new FFrame();
+        f.setSize(500, 500);
+        f.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+        });
+        f.setVisible(true);
+    }
 
+    static class FFrame extends Frame implements Runnable {
 
-	static class FFrame extends Frame implements Runnable {
+        Thread th;
+        Ball[] balls;
+        private boolean enable = true;
+        private int counter = 0;
 
-		Thread th;
-		Ball myBall1;
-		Ball myBall2;
+        FFrame() {
+            th = new Thread(this);
+            th.start();
+        }
 
-		private boolean enable = true;
-		private int counter = 0;
+        public void run() {
 
-		FFrame() {
-			th = new Thread(this);
-			th.start();
-		}
+            balls = new Ball[5];
+            balls[0] = new Ball(200, 150, 10, Color.RED);
+            balls[1] = new Ball(50, 250, 20, Color.GREEN);
+            balls[2] = new Ball(300, 100, 15, Color.BLUE);
+            balls[3] = new Ball(100, 300, 25, Color.YELLOW);
+            balls[4] = new Ball(150, 200, 30, Color.MAGENTA);
 
-		public void run() {
+            while (enable) {
 
+                try {
+                    Thread.sleep(100);
+                    counter++;
+                    if (counter >= 200) enable = false;
+                } catch (InterruptedException e) {
+                }
 
-			myBall1 = new Ball();
-			myBall1.setPosition(200, 150);
-			myBall1.setR(10);
-			myBall1.setColor(Color.RED);
+                for (Ball ball : balls) {
+                    ball.move();
+                }
 
-			myBall2 = new Ball();
-			myBall2.setPosition(50, 250);
-			myBall2.setR(20);
-			myBall2.setColor(Color.GREEN);
+                repaint();  // paint()メソッドが呼び出される
+            }
+        }
 
-			while (enable) {
+        public void paint(Graphics g) {
+            for (Ball ball : balls) {
+                ball.draw(g);
+            }
+        }
 
-				try {
-					th.sleep(100);
-					counter++;
-					if (counter >= 200) enable = false;
-				} catch (InterruptedException e) {
-				}
+        // Ball というインナークラスを作る
+        class Ball {
+            int x;
+            int y;
+            int r; // 半径
+            Color c;
+            Random random = new Random();
 
+            int xDir = 1;  // 1:+方向  -1: -方向
+            int yDir = 1;
 
-				myBall1.move();
-				myBall2.move();
+            Ball(int x, int y, int r, Color c) {
+                this.x = x;
+                this.y = y;
+                this.r = r;
+                this.c = c;
+            }
 
-				repaint();  // paint()メソッドが呼び出される
-			}
-		}
+            void move() {
 
+                if ((xDir == 1) && (x >= 300)) {
+                    xDir = -1;
+                    changeColor();
+                }
+                if ((xDir == -1) && (x <= 100)) {
+                    xDir = 1;
+                    changeColor();
+                }
 
-		public void paint(Graphics g) {
-			myBall1.draw(g);
-			myBall2.draw(g);
-		}
+                if (xDir == 1) {
+                    x = x + 10;
+                } else {
+                    x = x - 10;
+                }
 
-		// Ball というインナークラスを作る
-		class Ball {
-			int x;
-			int y;
-			int r; // 半径
-			Color c = Color.RED;
+                if ((yDir == 1) && (y >= 300)) {
+                    yDir = -1;
+                    changeColor();
+                }
+                if ((yDir == -1) && (y <= 100)) {
+                    yDir = 1;
+                    changeColor();
+                }
 
-			int xDir = 1;  // 1:+方向  -1: -方向
-			int yDir = 1;
+                if (yDir == 1) {
+                    y = y + 10;
+                } else {
+                    y = y - 10;
+                }
+            }
 
-			void setColor(Color c) {
-				this.c = c;
-			}
+            void changeColor() {
+                c = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256));
+            }
 
+            void draw(Graphics g) {
+                g.setColor(c);
+                g.fillOval(x, y, 2 * r, 2 * r);  // rは半径なので2倍にする
+            }
 
-			void move() {
+        }// innner class Ball end
 
-				if ((xDir == 1) && (x >= 300)) {
-					xDir = -1;
-				}
-				if ((xDir == -1) && (x <= 100)) {
-					xDir = 1;
-				}
-
-				if (xDir == 1) {
-					x = x + 10;
-				} else {
-					x = x - 10;
-				}
-
-
-				if ((yDir == 1) && (y >= 300)) {
-					yDir = -1;
-				}
-				if ((yDir == -1) && (y <= 100)) {
-					yDir = 1;
-				}
-
-				if (yDir == 1) {
-					y = y + 10;
-				} else {
-					y = y - 10;
-				}
-
-
-			}
-
-
-			void setPosition(int x, int y) {
-				this.x = x;
-				this.y = y;
-			}
-
-			void setR(int r) {
-				this.r = r;
-			}
-
-			void draw(Graphics g) {
-				g.setColor(c);
-				g.fillOval(x, y, 2 * r, 2 * r);  // rは半径なので2倍にする
-			}
-
-		}//innner class Ball end
-
-	}
+    }
 
 }
