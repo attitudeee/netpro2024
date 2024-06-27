@@ -80,7 +80,7 @@ public class WerewolfClient {
 
         while (true) {
             String line = in.readLine();
-            System.out.println("受信: " + line); // Debug output for received messages
+            System.out.println(line); // Debug output for received messages
             if (line.startsWith("プレイヤー人数を設定してください。")) {
                 int playerCount = getPlayerCount();
                 out.println("PLAYERCOUNT " + playerCount);
@@ -92,8 +92,8 @@ public class WerewolfClient {
             } else if (line.startsWith("メッセージ")) {
                 messageArea.append(line.substring(5) + "\n");
             } else if (line.startsWith("結果")) {
-                String resultMessage = line.substring(4).replace("\\n", "\n"); // Handle escaped new lines
-                messageArea.append("投票結果:\n" + resultMessage + "\n"); // Show results in message area
+                String resultMessage = line.substring(4);
+                messageArea.append(resultMessage + "\n"); // Show results in message area
             } else if (line.startsWith("役職")) {
                 messageArea.append(line.substring(4) + "\n"); // Show role information in message area
             } else if (line.startsWith("投票開始")) {
