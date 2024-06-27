@@ -21,7 +21,7 @@ public class WerewolfServer {
     private static String werewolfName = null; // Track the name of the werewolf
 
     public static void main(String[] args) throws Exception {
-        System.out.println("The werewolf server is running.");
+        System.out.println("人狼サーバーが起動しました。");
         ServerSocket listener = new ServerSocket(PORT);
         try {
             while (true) {
@@ -49,7 +49,7 @@ public class WerewolfServer {
 
                 // Set the minimum number of players if not already set
                 if (!isPlayerCountSet) {
-                    out.println("SETPLAYERCOUNT");
+                    out.println("プレイヤー人数を設定してください。");
                     while (true) {
                         String input = in.readLine();
                         if (input != null && input.startsWith("PLAYERCOUNT")) {
@@ -58,14 +58,14 @@ public class WerewolfServer {
                                 isPlayerCountSet = true;
                                 break;
                             } catch (NumberFormatException e) {
-                                out.println("INVALIDNUMBER");
+                                out.println("無効な数値です。");
                             }
                         }
                     }
                 }
 
                 while (true) {
-                    out.println("SUBMITNAME");
+                    out.println("名前を入力してください。");
                     name = in.readLine();
                     if (name == null) {
                         return;
@@ -82,28 +82,28 @@ public class WerewolfServer {
                     }
                 }
 
-                out.println("NAMEACCEPTED " + name);
+                out.println("名前が承認されました: " + name);
                 synchronized (clientWriters) {
                     clientWriters.add(out);
                 }
 
                 for (PrintWriter writer : clientWriters) {
-                    writer.println("MESSAGE " + name + " has joined");
+                    writer.println("メッセージ: " + name + "が参加しました。");
                 }
 
                 // Notify the werewolf of their role
                 if (name.equals(werewolfName)) {
-                    out.println("ROLE You are the werewolf!");
+                    out.println("役職: あなたは人狼です！");
                 } else {
-                    out.println("ROLE You are a villager.");
+                    out.println("役職: あなたは村人です。");
                 }
 
                 // Check if minimum players have joined
                 synchronized (clientWriters) {
                     if (clientWriters.size() >= minPlayers) {
                         for (PrintWriter writer : clientWriters) {
-                            writer.println("MESSAGE Minimum players reached. You can start voting now.");
-                            writer.println("VOTINGSTART");
+                            writer.println("メッセージ: 最低プレイヤー数に達しました。投票を開始できます。");
+                            writer.println("投票開始");
                         }
                     }
                 }
@@ -115,20 +115,20 @@ public class WerewolfServer {
                     }
                     if (input.startsWith("/vote ")) {
                         String voteFor = input.substring(6);
-                        System.out.println(name + " voted for " + voteFor); // Debug output
+                        System.out.println(name + "は" + voteFor + "に投票しました。"); // Debug output
                         synchronized (votes) {
                             votes.put(voteFor, votes.getOrDefault(voteFor, 0) + 1);
                         }
                         for (PrintWriter writer : clientWriters) {
-                            writer.println("MESSAGE " + name + " voted for " + voteFor);
+                            writer.println("メッセージ: " + name + "が" + voteFor + "に投票しました。");
                         }
-                    } else if (input.equals("/endvote")) {
-                        System.out.println("End vote command received");
+                    } else if (input.equals("/投票終了")) {
+                        System.out.println("投票終了コマンドを受信しました。");
                         showVotingResults(); // Show voting results
                         resetVotes();
                     } else {
                         for (PrintWriter writer : clientWriters) {
-                            writer.println("MESSAGE " + name + ": " + input);
+                            writer.println("メッセージ: " + name + ": " + input);
                         }
                     }
                 }
@@ -154,13 +154,13 @@ public class WerewolfServer {
 
         private void showVotingResults() {
             synchronized (votes) {
-                StringBuilder results = new StringBuilder("Voting Results:\n");
+                StringBuilder results = new StringBuilder("投票結果:\n");
                 for (Map.Entry<String, Integer> entry : votes.entrySet()) {
-                    results.append(entry.getKey()).append(": ").append(entry.getValue()).append(" votes\n");
+                    results.append(entry.getKey()).append(": ").append(entry.getValue()).append("票\n");
                 }
                 System.out.println(results.toString()); // Output to server console
                 for (PrintWriter writer : clientWriters) {
-                    writer.println("RESULT " + results.toString()); // Send to clients
+                    writer.println("結果 " + results.toString().replace("\n", "\\n")); // Send to clients with escaped new lines
                 }
             }
         }

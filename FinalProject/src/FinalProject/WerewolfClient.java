@@ -17,7 +17,7 @@ import javax.swing.JTextField;
 public class WerewolfClient {
     private BufferedReader in;
     private PrintWriter out;
-    private JFrame frame = new JFrame("Werewolf");
+    private JFrame frame = new JFrame("人狼ゲーム");
     private JTextField textField = new JTextField(40);
     private JTextArea messageArea = new JTextArea(8, 40);
     private boolean canVote = false; // Track if voting is allowed
@@ -35,7 +35,7 @@ public class WerewolfClient {
                     out.println(textField.getText());
                     textField.setText("");
                 } else {
-                    messageArea.append("Waiting for minimum players to join...\n");
+                    messageArea.append("最低プレイヤー数が集まるまでお待ちください...\n");
                 }
             }
         });
@@ -44,16 +44,16 @@ public class WerewolfClient {
     private String getServerAddress() {
         return JOptionPane.showInputDialog(
             frame,
-            "Enter IP Address of the Server:",
-            "Welcome to the Werewolf Game",
+            "サーバーのIPアドレスを入力してください:",
+            "人狼ゲームへようこそ",
             JOptionPane.QUESTION_MESSAGE);
     }
 
     private String getName() {
         return JOptionPane.showInputDialog(
             frame,
-            "Choose a screen name:",
-            "Screen name selection",
+            "スクリーンネームを選んでください:",
+            "スクリーンネーム選択",
             JOptionPane.PLAIN_MESSAGE);
     }
 
@@ -61,13 +61,13 @@ public class WerewolfClient {
         while (true) {
             String count = JOptionPane.showInputDialog(
                 frame,
-                "Enter the number of players to start the game:",
-                "Player Count Selection",
+                "ゲームを開始するプレイヤー数を入力してください:",
+                "プレイヤー数選択",
                 JOptionPane.PLAIN_MESSAGE);
             try {
                 return Integer.parseInt(count);
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(frame, "Invalid number. Please enter a valid number.");
+                JOptionPane.showMessageDialog(frame, "無効な数値です。有効な数値を入力してください。");
             }
         }
     }
@@ -80,25 +80,25 @@ public class WerewolfClient {
 
         while (true) {
             String line = in.readLine();
-            System.out.println("Received: " + line); // Debug output for received messages
-            if (line.startsWith("SETPLAYERCOUNT")) {
+            System.out.println("受信: " + line); // Debug output for received messages
+            if (line.startsWith("プレイヤー人数を設定してください。")) {
                 int playerCount = getPlayerCount();
                 out.println("PLAYERCOUNT " + playerCount);
-            } else if (line.startsWith("SUBMITNAME")) {
+            } else if (line.startsWith("名前を入力してください。")) {
                 out.println(getName());
-            } else if (line.startsWith("NAMEACCEPTED")) {
+            } else if (line.startsWith("名前が承認されました")) {
                 textField.setEditable(true);
-                messageArea.append("Name accepted.\n");
-            } else if (line.startsWith("MESSAGE")) {
-                messageArea.append(line.substring(8) + "\n");
-            } else if (line.startsWith("RESULT")) {
-                String resultMessage = line.substring(7);
-                messageArea.append(resultMessage + "\n"); // Show results in message area
-            } else if (line.startsWith("ROLE")) {
-                messageArea.append(line.substring(5) + "\n"); // Show role information in message area
-            } else if (line.startsWith("VOTINGSTART")) {
+                messageArea.append("名前が承認されました。\n");
+            } else if (line.startsWith("メッセージ")) {
+                messageArea.append(line.substring(5) + "\n");
+            } else if (line.startsWith("結果")) {
+                String resultMessage = line.substring(4).replace("\\n", "\n"); // Handle escaped new lines
+                messageArea.append("投票結果:\n" + resultMessage + "\n"); // Show results in message area
+            } else if (line.startsWith("役職")) {
+                messageArea.append(line.substring(4) + "\n"); // Show role information in message area
+            } else if (line.startsWith("投票開始")) {
                 canVote = true;
-                messageArea.append("Voting can now start.\n");
+                messageArea.append("投票を開始できます。\n");
             }
         }
     }
