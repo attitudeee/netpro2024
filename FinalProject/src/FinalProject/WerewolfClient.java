@@ -91,9 +91,9 @@ public class WerewolfClient {
                 messageArea.append("名前が承認されました。\n");
             } else if (line.startsWith("メッセージ")) {
                 messageArea.append(line.substring(5) + "\n");
-            } else if (line.startsWith("結果")) {
-                String resultMessage = line.substring(4);
-                messageArea.append(resultMessage + "\n"); // Show results in message area
+            } else if (line.startsWith("結果 投票結果:")) {
+                String resultMessage = line.substring(8).replace("\\n", "\n"); // Handle escaped new lines
+                messageArea.append("投票結果:\n" + resultMessage); // Show results in message area without additional newline
             } else if (line.startsWith("役職")) {
                 messageArea.append(line.substring(4) + "\n"); // Show role information in message area
             } else if (line.startsWith("投票開始")) {

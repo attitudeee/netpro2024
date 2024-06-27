@@ -173,7 +173,7 @@ public class WerewolfServer {
                 }
                 System.out.println(results.toString()); // Output to server console
                 for (PrintWriter writer : clientWriters) {
-                    writer.println("結果 " + results.toString()); // Send to clients
+                    writer.println("結果 " + results.toString().replace("\n", "\\n")); // Send to clients with escaped new lines
                 }
             }
         }
