@@ -20,7 +20,12 @@ public class WerewolfClient {
     private JFrame frame = new JFrame("人狼ゲーム");
     private JTextField textField = new JTextField(40);
     private JTextArea messageArea = new JTextArea(8, 40);
-    private boolean canVote = false; // Track if voting is allowed
+    private boolean canVote = false; // 投票が許可されているかどうかを追跡
+    private boolean isAlive = true; // プレイヤーが生存しているかどうかを追跡
+    private boolean isWerewolf = false; // プレイヤーが人狼かどうかを追跡
+    private boolean isWerewolfTurn = false; // 人狼が殺すターンかどうかを追跡
+    private boolean gameOver = false; // ゲームが終了したかどうかを追跡
+    private String playerName;
 
     public WerewolfClient() {
         textField.setEditable(false);
@@ -31,11 +36,18 @@ public class WerewolfClient {
 
         textField.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (canVote) {
+                if (gameOver) {
                     out.println(textField.getText());
                     textField.setText("");
+                } else if (isAlive) {
+                    if (canVote || isWerewolfTurn) {
+                        out.println(textField.getText());
+                        textField.setText("");
+                    } else {
+                        messageArea.append("最低プレイヤー数が集まるか、人狼が決定を下すのを待っています...\n");
+                    }
                 } else {
-                    messageArea.append("最低プレイヤー数が集まるまでお待ちください...\n");
+                    messageArea.append("あなたは排除されているので、参加できません。\n");
                 }
             }
         });
@@ -50,11 +62,12 @@ public class WerewolfClient {
     }
 
     private String getName() {
-        return JOptionPane.showInputDialog(
+        playerName = JOptionPane.showInputDialog(
             frame,
             "スクリーンネームを選んでください:",
             "スクリーンネーム選択",
             JOptionPane.PLAIN_MESSAGE);
+        return playerName;
     }
 
     private int getPlayerCount() {
@@ -81,7 +94,7 @@ public class WerewolfClient {
         while (true) {
             String line = in.readLine();
             if (line != null) {
-                System.out.println(line); // Debug output for received messages
+                System.out.println(line); // 受信メッセージのデバッグ出力
                 if (line.startsWith("プレイヤー人数を設定してください。")) {
                     int playerCount = getPlayerCount();
                     out.println("PLAYERCOUNT " + playerCount);
@@ -92,14 +105,35 @@ public class WerewolfClient {
                     messageArea.append("名前が承認されました。\n");
                 } else if (line.startsWith("メッセージ")) {
                     messageArea.append(line.substring(5) + "\n");
-                } else if (line.startsWith("結果 投票結果:")) {
-                    String resultMessage = line.substring(8).replace("\\n", "\n"); // Handle escaped new lines
-                    messageArea.append("投票結果:\n" + resultMessage); // Show results in message area without additional newline
+                } else if (line.startsWith("結果")) {
+                    String resultMessage = line.substring(4);
+                    messageArea.append(resultMessage + "\n"); // 結果をメッセージエリアに表示
+                    if (resultMessage.contains("排除されたプレイヤー: ")) {
+                        String eliminatedPlayer = resultMessage.substring(resultMessage.indexOf("排除されたプレイヤー: ") + 19).trim();
+                        if (eliminatedPlayer.equals(playerName)) {
+                            isAlive = false; // プレイヤーのステータスを死に設定
+                            textField.setEditable(false); // それ以上のコメントを防ぐ
+                        }
+                    }
                 } else if (line.startsWith("役職")) {
-                    messageArea.append(line.substring(4) + "\n"); // Show role information in message area
+                    String roleMessage = line.substring(4);
+                    messageArea.append(roleMessage + "\n"); // 役職情報をメッセージエリアに表示
+                    if (roleMessage.contains("人狼")) {
+                        isWerewolf = true;
+                    }
                 } else if (line.startsWith("投票開始")) {
                     canVote = true;
                     messageArea.append("投票を開始できます。\n");
+                } else if (line.startsWith("KILL")) {
+                    if (isWerewolf && isAlive) {
+                        isWerewolfTurn = true;
+                        messageArea.append("殺す村人を選択してください: /kill <名前>\n");
+                        textField.setEditable(true);
+                    }
+                } else if (line.startsWith("GAMEOVER")) {
+                    gameOver = true;
+                    messageArea.append(line.substring(9) + "\n"); // ゲームオーバーメッセージを表示
+                    textField.setEditable(true); // それ以上のコメントを許可
                 }
             }
         }

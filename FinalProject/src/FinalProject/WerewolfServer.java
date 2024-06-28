@@ -6,20 +6,25 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public class WerewolfServer {
     private static final int PORT = 12345;
-    private static int expectedPlayers = 3; // Number of players required to start the game
-    private static boolean isPlayerCountSet = false; // Track if the player count has been set
+    private static int startPlayers = 3; // ゲーム開始に必要なプレイヤー数
+    private static boolean isPlayerCountSet = false; // プレイヤー数が設定されたかどうかを追跡
     private static Set<PrintWriter> clientWriters = new HashSet<>();
-    private static Map<String, String> clientNames = new HashMap<>();
+    private static Map<PrintWriter, String> clientNames = new HashMap<>();
     private static Map<String, Integer> votes = new HashMap<>();
-    private static Map<String, Boolean> hasVoted = new HashMap<>(); // Track if a player has voted
-    private static String werewolfName = null; // Track the name of the werewolf
+    private static Set<String> deadPlayers = new HashSet<>(); // 死んだプレイヤーを追跡
+    private static Set<String> votedPlayers = new HashSet<>(); // 投票したプレイヤーを追跡
+    private static String werewolfName = null; // 人狼の名前を追跡
+    private static boolean gameOver = false; // ゲームが終了したかどうかを追跡
 
     public static void main(String[] args) throws Exception {
         System.out.println("人狼サーバーが起動しました。");
@@ -48,14 +53,14 @@ public class WerewolfServer {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
 
-                // Set the number of players if not already set
+                // プレイヤー数を設定
                 if (!isPlayerCountSet) {
                     out.println("プレイヤー人数を設定してください。");
                     while (true) {
                         String input = in.readLine();
                         if (input != null && input.startsWith("PLAYERCOUNT")) {
                             try {
-                                expectedPlayers = Integer.parseInt(input.substring(12));
+                                startPlayers = Integer.parseInt(input.substring(12));
                                 isPlayerCountSet = true;
                                 break;
                             } catch (NumberFormatException e) {
@@ -65,6 +70,7 @@ public class WerewolfServer {
                     }
                 }
 
+                // 名前を入力
                 while (true) {
                     out.println("名前を入力してください。");
                     name = in.readLine();
@@ -72,13 +78,9 @@ public class WerewolfServer {
                         return;
                     }
                     synchronized (clientNames) {
-                        if (!name.isBlank() && !clientNames.containsKey(name)) {
-                            clientNames.put(name, name);
-                            votes.put(name, 0); // Initialize votes for the player
-                            hasVoted.put(name, false); // Initialize voting status for the player
-                            if (clientNames.size() == 1) {
-                                werewolfName = name; // Assign the first player as the werewolf
-                            }
+                        if (!name.isBlank() && !clientNames.containsValue(name)) {
+                            clientNames.put(out, name);
+                            votes.put(name, 0); // プレイヤーの票を初期化
                             break;
                         }
                     }
@@ -93,18 +95,12 @@ public class WerewolfServer {
                     writer.println("メッセージ: " + name + "が参加しました。");
                 }
 
-                // Notify the werewolf of their role
-                if (name.equals(werewolfName)) {
-                    out.println("役職: あなたは人狼です！");
-                } else {
-                    out.println("役職: あなたは村人です。");
-                }
-
-                // Check if the expected number of players have joined
+                // ゲーム開始に必要なプレイヤー数が揃ったか確認
                 synchronized (clientWriters) {
-                    if (clientWriters.size() == expectedPlayers) {
+                    if (clientWriters.size() >= startPlayers) {
+                        assignRoles(); // 役割を割り当て
                         for (PrintWriter writer : clientWriters) {
-                            writer.println("メッセージ: 指定されたプレイヤー数に達しました。投票を開始できます。");
+                            writer.println("メッセージ: " + startPlayers + "人のプレイヤーでゲームを開始します。");
                             writer.println("投票開始");
                         }
                     }
@@ -115,18 +111,28 @@ public class WerewolfServer {
                     if (input == null) {
                         return;
                     }
-                    if (input.startsWith("/vote ")) {
+                    if (input.startsWith("/vote ") && !deadPlayers.contains(name) && !gameOver) {
                         String voteFor = input.substring(6);
-                        System.out.println(name + "は" + voteFor + "に投票しました。"); // Debug output
+                        System.out.println(name + "は" + voteFor + "に投票しました。"); // デバッグ出力
                         synchronized (votes) {
                             votes.put(voteFor, votes.getOrDefault(voteFor, 0) + 1);
-                            hasVoted.put(name, true); // Mark the player as having voted
+                            votedPlayers.add(name);
                         }
                         for (PrintWriter writer : clientWriters) {
                             writer.println("メッセージ: " + name + "が" + voteFor + "に投票しました。");
                         }
-                        checkAllVotesIn(); // Check if all players have voted
-                    } else {
+                        // すべてのプレイヤーが投票したか確認
+                        if (votedPlayers.size() == (clientNames.size() - deadPlayers.size())) {
+                            handleVotingResults(); // 投票結果を処理し、プレイヤーを排除
+                            resetVotes();
+                            if (!gameOver) {
+                                startWerewolfKillTurn();
+                            }
+                        }
+                    } else if (input.startsWith("/kill ") && name.equals(werewolfName) && !gameOver) {
+                        String killName = input.substring(6);
+                        werewolfKill(killName);
+                    } else if (!deadPlayers.contains(name) || gameOver) {
                         for (PrintWriter writer : clientWriters) {
                             writer.println("メッセージ: " + name + ": " + input);
                         }
@@ -136,11 +142,10 @@ public class WerewolfServer {
                 System.out.println(e);
             } finally {
                 if (name != null) {
-                    clientNames.remove(name);
+                    clientNames.remove(out);
                     votes.remove(name);
-                    hasVoted.remove(name);
                     if (name.equals(werewolfName)) {
-                        werewolfName = null; // Reset werewolf if they disconnect
+                        werewolfName = null; // 切断した場合は人狼をリセット
                     }
                 }
                 if (out != null) {
@@ -153,28 +158,62 @@ public class WerewolfServer {
             }
         }
 
-        private void checkAllVotesIn() {
-            synchronized (hasVoted) {
-                for (boolean voted : hasVoted.values()) {
-                    if (!voted) {
-                        return; // Not all players have voted yet
-                    }
+        private void assignRoles() {
+            List<String> playerNames = new ArrayList<>(clientNames.values());
+            Collections.shuffle(playerNames); // 役割をランダムに割り当てるためにリストをシャッフル
+            werewolfName = playerNames.get(0); // シャッフルされたリストの最初のプレイヤーを人狼に割り当て
+
+            for (Map.Entry<PrintWriter, String> entry : clientNames.entrySet()) {
+                if (entry.getValue().equals(werewolfName)) {
+                    entry.getKey().println("役職: あなたは人狼です！");
+                } else {
+                    entry.getKey().println("役職: あなたは村人です。");
                 }
-                showVotingResults(); // All players have voted, show results
-                resetVotes(); // Reset votes for next round
             }
         }
 
-        private void showVotingResults() {
+        private void handleVotingResults() {
             synchronized (votes) {
+                String eliminatedPlayer = Collections.max(votes.entrySet(), Map.Entry.comparingByValue()).getKey();
+                deadPlayers.add(eliminatedPlayer);
+
                 StringBuilder results = new StringBuilder("投票結果:\n");
                 for (Map.Entry<String, Integer> entry : votes.entrySet()) {
                     results.append(entry.getKey()).append(": ").append(entry.getValue()).append("票\n");
                 }
-                System.out.println(results.toString()); // Output to server console
+                results.append("排除されたプレイヤー: ").append(eliminatedPlayer).append("\n");
+
+                System.out.println(results.toString()); // サーバーコンソールに出力
                 for (PrintWriter writer : clientWriters) {
-                    writer.println("結果 " + results.toString().replace("\n", "\\n")); // Send to clients with escaped new lines
+                    writer.println("結果 " + results.toString()); // クライアントに送信
                 }
+
+                // 勝利条件を確認
+                checkWinConditions();
+            }
+        }
+
+        private void startWerewolfKillTurn() {
+            PrintWriter werewolfWriter = getWriterByName(werewolfName);
+            if (werewolfWriter != null) {
+                werewolfWriter.println("KILL: 村人を選択してください: /kill <名前>で村人を殺します。");
+            }
+        }
+
+        private void checkWinConditions() {
+            int aliveVillagers = (int) clientNames.values().stream().filter(name -> !name.equals(werewolfName) && !deadPlayers.contains(name)).count();
+            int aliveWerewolves = werewolfName != null && !deadPlayers.contains(werewolfName) ? 1 : 0;
+
+            if (aliveWerewolves == 0) {
+                for (PrintWriter writer : clientWriters) {
+                    writer.println("GAMEOVER: 村人の勝利です！人狼が排除されました。");
+                }
+                gameOver = true;
+            } else if (aliveWerewolves >= aliveVillagers) {
+                for (PrintWriter writer : clientWriters) {
+                    writer.println("GAMEOVER: 人狼の勝利です！人狼が村人と同数またはそれ以上になりました。");
+                }
+                gameOver = true;
             }
         }
 
@@ -183,10 +222,37 @@ public class WerewolfServer {
                 for (String key : votes.keySet()) {
                     votes.put(key, 0);
                 }
-                for (String key : hasVoted.keySet()) {
-                    hasVoted.put(key, false); // Reset voting status for the next round
+            }
+            votedPlayers.clear();
+        }
+
+        private PrintWriter getWriterByName(String name) {
+            for (Map.Entry<PrintWriter, String> entry : clientNames.entrySet()) {
+                if (entry.getValue().equals(name)) {
+                    return entry.getKey();
                 }
             }
+            return null;
+        }
+
+        private void werewolfKill(String killName) {
+            if (!clientNames.containsValue(killName) || deadPlayers.contains(killName)) {
+                PrintWriter werewolfWriter = getWriterByName(werewolfName);
+                if (werewolfWriter != null) {
+                    werewolfWriter.println("メッセージ: 無効な名前です。もう一度試してください。");
+                }
+                return;
+            }
+
+            deadPlayers.add(killName);
+            StringBuilder killMessage = new StringBuilder("人狼が殺しました: ").append(killName).append("\n");
+
+            System.out.println(killMessage.toString()); // サーバーコンソールに出力
+            for (PrintWriter writer : clientWriters) {
+                writer.println("結果 " + killMessage.toString()); // クライアントに送信
+            }
+
+            checkWinConditions();
         }
     }
 }
