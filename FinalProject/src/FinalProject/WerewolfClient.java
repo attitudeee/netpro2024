@@ -80,25 +80,27 @@ public class WerewolfClient {
 
         while (true) {
             String line = in.readLine();
-            System.out.println(line); // Debug output for received messages
-            if (line.startsWith("プレイヤー人数を設定してください。")) {
-                int playerCount = getPlayerCount();
-                out.println("PLAYERCOUNT " + playerCount);
-            } else if (line.startsWith("名前を入力してください。")) {
-                out.println(getName());
-            } else if (line.startsWith("名前が承認されました")) {
-                textField.setEditable(true);
-                messageArea.append("名前が承認されました。\n");
-            } else if (line.startsWith("メッセージ")) {
-                messageArea.append(line.substring(5) + "\n");
-            } else if (line.startsWith("結果 投票結果:")) {
-                String resultMessage = line.substring(8).replace("\\n", "\n"); // Handle escaped new lines
-                messageArea.append("投票結果:\n" + resultMessage); // Show results in message area without additional newline
-            } else if (line.startsWith("役職")) {
-                messageArea.append(line.substring(4) + "\n"); // Show role information in message area
-            } else if (line.startsWith("投票開始")) {
-                canVote = true;
-                messageArea.append("投票を開始できます。\n");
+            if (line != null) {
+                System.out.println(line); // Debug output for received messages
+                if (line.startsWith("プレイヤー人数を設定してください。")) {
+                    int playerCount = getPlayerCount();
+                    out.println("PLAYERCOUNT " + playerCount);
+                } else if (line.startsWith("名前を入力してください。")) {
+                    out.println(getName());
+                } else if (line.startsWith("名前が承認されました")) {
+                    textField.setEditable(true);
+                    messageArea.append("名前が承認されました。\n");
+                } else if (line.startsWith("メッセージ")) {
+                    messageArea.append(line.substring(5) + "\n");
+                } else if (line.startsWith("結果 投票結果:")) {
+                    String resultMessage = line.substring(8).replace("\\n", "\n"); // Handle escaped new lines
+                    messageArea.append("投票結果:\n" + resultMessage); // Show results in message area without additional newline
+                } else if (line.startsWith("役職")) {
+                    messageArea.append(line.substring(4) + "\n"); // Show role information in message area
+                } else if (line.startsWith("投票開始")) {
+                    canVote = true;
+                    messageArea.append("投票を開始できます。\n");
+                }
             }
         }
     }

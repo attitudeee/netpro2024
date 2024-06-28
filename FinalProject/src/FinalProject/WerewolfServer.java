@@ -90,7 +90,7 @@ public class WerewolfServer {
                 }
 
                 for (PrintWriter writer : clientWriters) {
-                    writer.println(name + "が参加しました。");
+                    writer.println("メッセージ: " + name + "が参加しました。");
                 }
 
                 // Notify the werewolf of their role
@@ -104,7 +104,7 @@ public class WerewolfServer {
                 synchronized (clientWriters) {
                     if (clientWriters.size() == expectedPlayers) {
                         for (PrintWriter writer : clientWriters) {
-                            writer.println("指定されたプレイヤー数に達しました。投票を開始できます。");
+                            writer.println("メッセージ: 指定されたプレイヤー数に達しました。投票を開始できます。");
                             writer.println("投票開始");
                         }
                     }
@@ -123,12 +123,12 @@ public class WerewolfServer {
                             hasVoted.put(name, true); // Mark the player as having voted
                         }
                         for (PrintWriter writer : clientWriters) {
-                            writer.println(name + "が" + voteFor + "に投票しました。");
+                            writer.println("メッセージ: " + name + "が" + voteFor + "に投票しました。");
                         }
                         checkAllVotesIn(); // Check if all players have voted
                     } else {
                         for (PrintWriter writer : clientWriters) {
-                            writer.println(name + ": " + input);
+                            writer.println("メッセージ: " + name + ": " + input);
                         }
                     }
                 }
