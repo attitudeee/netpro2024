@@ -24,6 +24,7 @@ public class WerewolfClient {
     private boolean isAlive = true; // プレイヤーが生存しているかどうかを追跡
     private boolean isWerewolf = false; // プレイヤーが人狼かどうかを追跡
     private boolean isWerewolfTurn = false; // 人狼が殺すターンかどうかを追跡
+    private boolean isSeer = false; // プレイヤーが占い師かどうかを追跡
     private boolean gameOver = false; // ゲームが終了したかどうかを追跡
     private String playerName;
 
@@ -40,7 +41,7 @@ public class WerewolfClient {
                     out.println(textField.getText());
                     textField.setText("");
                 } else if (isAlive) {
-                    if (canVote || isWerewolfTurn) {
+                    if (canVote || isWerewolfTurn || isSeer) {
                         out.println(textField.getText());
                         textField.setText("");
                     } else {
@@ -120,6 +121,8 @@ public class WerewolfClient {
                     messageArea.append(roleMessage + "\n"); // 役職情報をメッセージエリアに表示
                     if (roleMessage.contains("人狼")) {
                         isWerewolf = true;
+                    } else if (roleMessage.contains("占い師")) {
+                        isSeer = true;
                     }
                 } else if (line.startsWith("投票開始")) {
                     canVote = true;
@@ -128,6 +131,11 @@ public class WerewolfClient {
                     if (isWerewolf && isAlive) {
                         isWerewolfTurn = true;
                         messageArea.append("殺す村人を選択してください: /kill <名前>\n");
+                        textField.setEditable(true);
+                    }
+                } else if (line.startsWith("SEER")) {
+                    if (isSeer && isAlive) {
+                        messageArea.append("占いたいプレイヤーを選択してください: /seer <名前>\n");
                         textField.setEditable(true);
                     }
                 } else if (line.startsWith("GAMEOVER")) {

@@ -24,6 +24,7 @@ public class WerewolfServer {
     private static Set<String> deadPlayers = new HashSet<>(); // 死んだプレイヤーを追跡
     private static Set<String> votedPlayers = new HashSet<>(); // 投票したプレイヤーを追跡
     private static String werewolfName = null; // 人狼の名前を追跡
+    private static String seerName = null; // 占い師の名前を追跡
     private static boolean gameOver = false; // ゲームが終了したかどうかを追跡
 
     public static void main(String[] args) throws Exception {
@@ -126,12 +127,15 @@ public class WerewolfServer {
                             handleVotingResults(); // 投票結果を処理し、プレイヤーを排除
                             resetVotes();
                             if (!gameOver) {
-                                startWerewolfKillTurn();
+                                startSeerTurn();
                             }
                         }
                     } else if (input.startsWith("/kill ") && name.equals(werewolfName) && !gameOver) {
                         String killName = input.substring(6);
                         werewolfKill(killName);
+                    } else if (input.startsWith("/seer ") && name.equals(seerName) && !gameOver) {
+                        String checkName = input.substring(6);
+                        seerCheck(checkName);
                     } else if (!deadPlayers.contains(name) || gameOver) {
                         for (PrintWriter writer : clientWriters) {
                             writer.println("メッセージ: " + name + ": " + input);
@@ -146,6 +150,9 @@ public class WerewolfServer {
                     votes.remove(name);
                     if (name.equals(werewolfName)) {
                         werewolfName = null; // 切断した場合は人狼をリセット
+                    }
+                    if (name.equals(seerName)) {
+                        seerName = null; // 切断した場合は占い師をリセット
                     }
                 }
                 if (out != null) {
@@ -162,10 +169,15 @@ public class WerewolfServer {
             List<String> playerNames = new ArrayList<>(clientNames.values());
             Collections.shuffle(playerNames); // 役割をランダムに割り当てるためにリストをシャッフル
             werewolfName = playerNames.get(0); // シャッフルされたリストの最初のプレイヤーを人狼に割り当て
+            if (playerNames.size() > 1) {
+                seerName = playerNames.get(1); // シャッフルされたリストの二番目のプレイヤーを占い師に割り当て
+            }
 
             for (Map.Entry<PrintWriter, String> entry : clientNames.entrySet()) {
                 if (entry.getValue().equals(werewolfName)) {
                     entry.getKey().println("役職: あなたは人狼です！");
+                } else if (entry.getValue().equals(seerName)) {
+                    entry.getKey().println("役職: あなたは占い師です！");
                 } else {
                     entry.getKey().println("役職: あなたは村人です。");
                 }
@@ -190,6 +202,13 @@ public class WerewolfServer {
 
                 // 勝利条件を確認
                 checkWinConditions();
+            }
+        }
+
+        private void startSeerTurn() {
+            PrintWriter seerWriter = getWriterByName(seerName);
+            if (seerWriter != null) {
+                seerWriter.println("SEER: 一人を選んで /seer <名前> と入力してください。");
             }
         }
 
@@ -253,6 +272,31 @@ public class WerewolfServer {
             }
 
             checkWinConditions();
+        }
+
+        private void seerCheck(String checkName) {
+            if (!clientNames.containsValue(checkName) || deadPlayers.contains(checkName)) {
+                PrintWriter seerWriter = getWriterByName(seerName);
+                if (seerWriter != null) {
+                    seerWriter.println("メッセージ: 無効な名前です。もう一度試してください。");
+                }
+                return;
+            }
+
+            StringBuilder seerMessage = new StringBuilder("占い師の結果: ").append(checkName).append("は");
+            if (checkName.equals(werewolfName)) {
+                seerMessage.append("人狼です。\n");
+            } else {
+                seerMessage.append("人狼ではありません。\n");
+            }
+
+            System.out.println(seerMessage.toString()); // サーバーコンソールに出力
+            PrintWriter seerWriter = getWriterByName(seerName);
+            if (seerWriter != null) {
+                seerWriter.println("結果 " + seerMessage.toString()); // 占い師にのみ結果を送信
+            }
+
+            startWerewolfKillTurn(); // 次に人狼のターンを開始
         }
     }
 }
